@@ -1,23 +1,97 @@
-import React, { useState, useEffect} from 'react';
-import './MainArea.css';
+import React, { useState, useEffect, useRef } from "react";
+import "./MainArea.css";
+import { useSelector, useDispatch } from "react-redux";
+import { v4 as uuidv4 } from "uuid";
 
 export default function MainArea() {
+  const [inpInfo, setInpInfo] = useState({
+    title: "",
+    subtitle: "",
+    body: "",
+  });
+
+  const dispatch = useDispatch();
+
+  const [validation, setValidation] = useState(true);
+
+  const allInp = useRef([]);
+  const addInp = (el) => {
+    if (el && !allInp.current.includes(el)) {
+      allInp.current.push(el);
+    }
+  };
+
+  const updateInputs = (e) => {
+    const actualInp = e.target.getAttribute('id');
+    const newObjState = {...inpInfo, [actualInp]: e.target.value};
+    setInpInfo(newObjState);
+  };
+
+  const handleForm = (e) => {
+    e.preventDefault();
+
+    if (inpInfo.title.length < 1) {
+      setValidation(false);
+      return;
+    }
+
+    setValidation(true);
+
+    dispatch({
+      type: "ADDNOTE",
+      payload: {
+        ...inpInfo,
+        id: uuidv4()
+      }
+    })
+
+    setInpInfo({
+      title: "",
+      subtitle: "",
+      body: ""
+    })
+
+  };
+
   return (
     <div className="container-content">
-        <h2>Votre plume</h2>
+      <h2>Votre plume</h2>
 
-        <form>
-            <label htmlFor="title">Le Titre</label>
-            <input type="text" id="title" />
+      <form onSubmit={handleForm}>
+        <label htmlFor="title">Le Titre</label>
+        <input
+          value={inpInfo.title}
+          onChange={updateInputs}
+          ref={addInp}
+          type="text"
+          id="title"
+        />
 
-            <label htmlFor="subtitle">Sous-titre</label>
-            <input type="text" id="subtitle" />
+        {!validation && (
+          <span className="info-validation">Veuillez renseigner un titre.</span>
+        )}
 
-            <label htmlFor="txtbody">Votre Texte</label>
-            <textarea type="text" id="txtbody" placeholder='Votre texte ...'></textarea>
+        <label htmlFor="subtitle">Sous-titre</label>
+        <input
+          value={inpInfo.subtitle}
+          onChange={updateInputs}
+          ref={addInp}
+          type="text"
+          id="subtitle"
+        />
 
-            <button>Enregistrer</button>
-        </form>
+        <label htmlFor="body">Votre Texte</label>
+        <textarea
+          value={inpInfo.body}
+          onChange={updateInputs}
+          ref={addInp}
+          type="text"
+          id="body"
+          placeholder="Votre texte ..."
+        ></textarea>
+
+        <button>Enregistrer</button>
+      </form>
     </div>
-  )
+  );
 }
