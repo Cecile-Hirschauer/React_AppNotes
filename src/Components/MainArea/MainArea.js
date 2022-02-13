@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import "./MainArea.css";
 import { useSelector, useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
@@ -10,47 +10,84 @@ export default function MainArea() {
     body: "",
   });
 
+  const [inpModify, setInpModify] = useState({
+    title: "",
+    subtitle: "",
+    body: "",
+  });
+
+  const selected = useSelector(state => state.selectedReducer.selectedNote);
+
+  useEffect(() => {
+    setInpModify(selected);
+  }, [selected])
+
   const dispatch = useDispatch();
 
   const [validation, setValidation] = useState(true);
 
-  const allInp = useRef([]);
-  const addInp = (el) => {
-    if (el && !allInp.current.includes(el)) {
-      allInp.current.push(el);
-    }
-  };
-
   const updateInputs = (e) => {
+
     const actualInp = e.target.getAttribute('id');
-    const newObjState = {...inpInfo, [actualInp]: e.target.value};
-    setInpInfo(newObjState);
+
+    if (selected.toggle) {
+      const newObjState = {...inpModify, [actualInp]: e.target.value };
+      setInpModify(newObjState);
+
+    } else if (selected.toggle === false) {
+      const newObjState = {...inpInfo, [actualInp]: e.target.value};
+      setInpInfo(newObjState);
+    }
+    
   };
 
   const handleForm = (e) => {
     e.preventDefault();
 
-    if (inpInfo.title.length < 1) {
-      setValidation(false);
-      return;
-    }
-
-    setValidation(true);
-
-    dispatch({
-      type: "ADDNOTE",
-      payload: {
-        ...inpInfo,
-        id: uuidv4()
+    if (selected.toggle) {
+      if (selected.title.length < 1) {
+        setValidation(false);
+        return;
       }
-    })
 
-    setInpInfo({
-      title: "",
-      subtitle: "",
-      body: ""
-    })
+      setValidation(true);
 
+      dispatch({
+        type: "UPDATENOTE",
+        payload: inpModify
+      });
+
+      dispatch({
+        type: "RESETNOTE"
+      });
+
+      setInpModify({
+        title: "",
+        subtitle: "",
+        body: ""
+      });
+    } else if (selected.toggle === false) {
+      if (inpInfo.title.length < 1) {
+        setValidation(false);
+        return;
+      }
+  
+      setValidation(true);
+  
+      dispatch({
+        type: "ADDNOTE",
+        payload: {
+          ...inpInfo,
+          id: uuidv4()
+        }
+      });
+  
+      setInpInfo({
+        title: "",
+        subtitle: "",
+        body: ""
+      });
+    }
   };
 
   return (
@@ -60,9 +97,8 @@ export default function MainArea() {
       <form onSubmit={handleForm}>
         <label htmlFor="title">Le Titre</label>
         <input
-          value={inpInfo.title}
+          value={inpModify.toggle ? inpModify.title: inpInfo.title}
           onChange={updateInputs}
-          ref={addInp}
           type="text"
           id="title"
         />
@@ -73,18 +109,16 @@ export default function MainArea() {
 
         <label htmlFor="subtitle">Sous-titre</label>
         <input
-          value={inpInfo.subtitle}
+          value={inpModify.toggle ? inpModify.subtitle: inpInfo.subtitle}
           onChange={updateInputs}
-          ref={addInp}
           type="text"
           id="subtitle"
         />
 
         <label htmlFor="body">Votre Texte</label>
         <textarea
-          value={inpInfo.body}
+          value={inpModify.toggle ? inpModify.body: inpInfo.body}
           onChange={updateInputs}
-          ref={addInp}
           type="text"
           id="body"
           placeholder="Votre texte ..."
